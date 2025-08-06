@@ -23,6 +23,7 @@ import UserCartWrapper from "./cart-wrapper";
 import { useEffect, useState } from "react";
 import { fetchCartItems } from "@/store/shop/cart-slice";
 import { Label } from "../ui/label"; // Using Label for menu items
+import { resetTokenAndCredentials } from "@/store/auth-slice";
 
 /**
  * MenuItems Component: Renders navigation links for the header.
@@ -83,9 +84,11 @@ function HeaderRightContent() {
   const dispatch = useDispatch();
 
   function handleLogout() {
-    dispatch(logoutUser());
+    // dispatch(logoutUser());
     // Optionally navigate to home or login page after logout
-    navigate("/shop/home");
+    dispatch(resetTokenAndCredentials());
+    sessionStorage.clear();
+    navigate("/auth/login");
   }
 
   // Fetch cart items when component mounts or user changes
