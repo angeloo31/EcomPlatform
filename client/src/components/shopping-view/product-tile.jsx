@@ -12,11 +12,18 @@ function ShoppingProductTile({
     <Card className="w-full max-w-sm mx-auto">
       <div onClick={() => handleGetProductDetails(product?._id)}>
         <div className="relative">
-          <img
-            src={product?.image}
-            alt={product?.title}
-            className="w-full h-[300px] object-cover rounded-t-lg"
-          />
+          {product?.image ? ( // Conditionally render the image
+            <img
+              src={product.image}
+              alt={product.title}
+              className="w-full h-[300px] object-cover rounded-t-lg"
+            />
+          ) : (
+            <div className="w-full h-[300px] flex items-center justify-center bg-gray-200 rounded-t-lg">
+              <p className="text-gray-500">No Image Available</p>
+            </div>
+          )}
+
           {product?.totalStock === 0 ? (
             <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
               Out Of Stock
@@ -59,13 +66,13 @@ function ShoppingProductTile({
       </div>
       <CardFooter>
         {product?.totalStock === 0 ? (
-          <Button className="w-full opacity-60 cursor-not-allowed">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white  w-full opacity-60 cursor-not-allowed">
             Out Of Stock
           </Button>
         ) : (
           <Button
             onClick={() => handleAddtoCart(product?._id, product?.totalStock)}
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             Add to cart
           </Button>

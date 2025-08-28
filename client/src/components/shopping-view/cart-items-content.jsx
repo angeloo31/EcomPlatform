@@ -81,7 +81,7 @@ function UserCartItemsContent({ cartItem }) {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            className="h-8 w-8 rounded-full"
+            className="h-8 w-8 rounded-full "
             size="icon"
             disabled={cartItem?.quantity === 1}
             onClick={() => handleUpdateQuantity(cartItem, "minus")}
@@ -96,7 +96,7 @@ function UserCartItemsContent({ cartItem }) {
           </span>
           <Button
             variant="outline"
-            className="h-8 w-8 rounded-full"
+            className="h-8 w-8 rounded-full "
             size="icon"
             onClick={() => handleUpdateQuantity(cartItem, "plus")}
           >
@@ -120,7 +120,7 @@ function UserCartItemsContent({ cartItem }) {
           variant="ghost"
           size="icon"
           onClick={() => handleCartItemDelete(cartItem)}
-          className="text-destructive hover:bg-destructive/10" // Improved hover state
+          className="text-destructive hover:bg-destructive/10 bg-red-500" // Improved hover state
         >
           <Trash className="h-5 w-5" />
           <span className="sr-only">Remove</span>

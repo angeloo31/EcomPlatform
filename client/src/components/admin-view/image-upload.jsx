@@ -1,10 +1,11 @@
 import { UploadCloudIcon, XIcon } from "lucide-react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { Button } from "../ui/button";
 import axios from "axios";
 import { Skeleton } from "../ui/skeleton";
+import imageCompression from "browser-image-compression"; // Import the compression library
 
 function ProductImageUpload({
   isEditMode = false,
@@ -15,7 +16,58 @@ function ProductImageUpload({
   const [uploadedImageUrl, setUploadedImageUrl] = useState(initialImageUrl);
   const [imageLoadingState, setImageLoadingState] = useState(false);
   const inputRef = useRef(null);
-  const isUploadingRef = useRef(false);
+
+  const uploadImageToCloudinary = useCallback(
+    async (file) => {
+      if (!file) return;
+
+      setImageLoadingState(true);
+
+      // --- OPTIMIZATION STEP 1: Compress and resize the image ---
+      const options = {
+        maxSizeMB: 1, // Max file size in MB
+        maxWidthOrHeight: 1920, // Max width or height
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(file, options);
+      console.log(
+        "Compressed file size:",
+        compressedFile.size / 1024 / 1024,
+        "MB"
+      );
+
+      const formData = new FormData();
+      formData.append("image", compressedFile); // Use the compressed file
+
+      try {
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/admin/products/upload`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        if (response?.data?.success) {
+          const imageUrl = response.data.result.url;
+          setUploadedImageUrl(imageUrl);
+          if (onUploadComplete) {
+            onUploadComplete(imageUrl);
+          }
+        }
+      } catch (error) {
+        console.error("Upload error:", error.response?.data || error.message);
+      } finally {
+        setImageLoadingState(false);
+        if (inputRef.current) {
+          inputRef.current.value = "";
+        }
+      }
+    },
+    [onUploadComplete]
+  );
 
   const handleImageFileChange = (event) => {
     const selectedFile = event.target.files?.[0];
@@ -41,52 +93,16 @@ function ProductImageUpload({
     if (inputRef.current) {
       inputRef.current.value = "";
     }
-    isUploadingRef.current = false;
     if (onUploadComplete) {
       onUploadComplete("");
     }
   };
 
-  const uploadImageToCloudinary = useCallback(
-    async (file) => {
-      if (!file || isUploadingRef.current) return;
-
-      isUploadingRef.current = true;
-      setImageLoadingState(true);
-
-      const formData = new FormData();
-      formData.append("image", file);
-
-      try {
-        const response = await axios.post(
-          ` ${import.meta.env.VITE_API_URL}/api/admin/products/upload`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        if (response?.data?.success) {
-          const imageUrl = response.data.result.url;
-          setUploadedImageUrl(imageUrl);
-          if (onUploadComplete) {
-            onUploadComplete(imageUrl);
-          }
-        }
-      } catch (error) {
-        console.error("Upload error:", error.response?.data || error.message);
-      } finally {
-        setImageLoadingState(false);
-        isUploadingRef.current = false;
-        if (inputRef.current) {
-          inputRef.current.value = "";
-        }
-      }
-    },
-    [onUploadComplete]
-  );
+  useEffect(() => {
+    if (initialImageUrl) {
+      setUploadedImageUrl(initialImageUrl);
+    }
+  }, [initialImageUrl]);
 
   return (
     <div className={`w-full mt-4 ${isCustomStyling ? "" : "max-w-md mx-auto"}`}>

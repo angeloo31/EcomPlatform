@@ -35,66 +35,68 @@ function AdminProducts() {
   const [openCreateProductsDialog, setOpenCreateProductsDialog] =
     useState(false);
   const [formData, setFormData] = useState(initialFormData);
-  const [imageFile, setImageFile] = useState(null);
-  // Keep this here for now, but consider the change above for testing
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
-  const [imageLoadingState, setImageLoadingState] = useState(false);
   const [currentEditedId, setCurrentEditedId] = useState(null);
   const dispatch = useDispatch();
   const { productList } = useSelector((state) => state.adminProducts);
 
+  function handleImageUploadComplete(imageUrl) {
+    setUploadedImageUrl(imageUrl);
+  }
+
+  function handleEdit(product) {
+    setCurrentEditedId(product._id);
+    setFormData(product);
+    setUploadedImageUrl(product.image); // Set the initial image URL for the editor
+    setOpenCreateProductsDialog(true);
+  }
+
   function onSubmit(e) {
     e.preventDefault();
+    const updatedFormData = {
+      ...formData,
+      image: uploadedImageUrl,
+    };
+
     currentEditedId !== null
-      ? dispatch(editProduct({ id: currentEditedId, formData })).then(
-          (data) => {
-            console.log(data, "edit");
-            if (data?.payload.success) {
-              dispatch(fetchAllProducts());
-              setFormData(initialFormData);
-              setOpenCreateProductsDialog(false);
-              setCurrentEditedId(null);
-              toast.success(
-                data.payload.message || "Product Edited successfully"
-              );
-            }
-          }
-        )
-      : dispatch(
-          addNewProduct({
-            ...formData,
-            image: uploadedImageUrl,
-          })
+      ? dispatch(
+          editProduct({ id: currentEditedId, formData: updatedFormData })
         ).then((data) => {
-          console.log("addNewProduct payload:", data?.payload); // Modified console log
+          if (data?.payload.success) {
+            dispatch(fetchAllProducts());
+            setFormData(initialFormData);
+            setOpenCreateProductsDialog(false);
+            setCurrentEditedId(null);
+            toast.success(
+              data.payload.message || "Product Edited successfully"
+            );
+          }
+        })
+      : dispatch(addNewProduct(updatedFormData)).then((data) => {
           if (data?.payload.success) {
             dispatch(fetchAllProducts());
             setOpenCreateProductsDialog(false);
-            setImageFile(null);
             setFormData(initialFormData);
+            setUploadedImageUrl("");
             toast.success(data.payload.message || "Product added successfully");
           }
         });
   }
 
   function isFormValid() {
-    // Get all form keys except for the image and salePrice
-    const requiredKeys = Object.keys(formData).filter(
+    const requiredKeys = Object.keys(initialFormData).filter(
       (key) => key !== "image" && key !== "salePrice"
     );
-
-    // Check if all required fields are filled out.
-    // The 'every' method ensures all items in the array pass the test.
-    return requiredKeys
-      .map((key) => formData[key] !== "" && formData[key] !== null)
-      .every((item) => item);
+    return requiredKeys.every(
+      (key) => formData[key] !== "" && formData[key] !== null
+    );
   }
 
   function handleDelete(getCurrentProductId) {
     dispatch(deleteProduct(getCurrentProductId)).then((data) => {
       if (data?.payload.success) {
         dispatch(fetchAllProducts());
-        toast.success(data.payload.message || "Product Deleated successfully");
+        toast.success(data.payload.message || "Product Deleted successfully");
       }
     });
   }
@@ -103,24 +105,23 @@ function AdminProducts() {
     dispatch(fetchAllProducts());
   }, [dispatch]);
 
-  console.log(productList, "productList");
   return (
     <Fragment>
       <div className="mb-6 w-full flex justify-end">
-        <Button onClick={() => setOpenCreateProductsDialog(true)}>
+        <Button
+          onClick={() => setOpenCreateProductsDialog(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+        >
           Add New Product
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {/* Placeholder for product cards */}
-        {/* You can add cards or a table here */}
         {productList && productList.length > 0
           ? productList.map((productItem) => (
               <AdminProductTile
-                setCurrentEditedId={setCurrentEditedId}
-                setFormData={setFormData}
-                setOpenCreateProductsDialog={setOpenCreateProductsDialog}
+                key={productItem._id}
+                setFormData={handleEdit}
                 product={productItem}
                 handleDelete={handleDelete}
               />
@@ -130,16 +131,19 @@ function AdminProducts() {
 
       <Sheet
         open={openCreateProductsDialog}
-        onOpenChange={() => {
-          setOpenCreateProductsDialog(false);
-          setCurrentEditedId(null);
-          setFormData(initialFormData);
+        onOpenChange={(open) => {
+          setOpenCreateProductsDialog(open);
+          if (!open) {
+            setCurrentEditedId(null);
+            setFormData(initialFormData);
+            setUploadedImageUrl("");
+          }
         }}
-        className="z-50 p-40"
+        className="z-50 p-40 bg-amber-50"
       >
         <SheetContent
           side="right"
-          className="w-full max-w-md overflow-y-auto bg-white text-black shadow-lg p-5"
+          className="w-full max-w-md overflow-y-auto shadow-lg p-5 bg-white"
         >
           <SheetHeader className="border-b pb-4">
             <SheetTitle className="text-xl font-bold">
@@ -147,12 +151,8 @@ function AdminProducts() {
             </SheetTitle>
           </SheetHeader>
           <ProductImageUpload
-            imageFile={imageFile}
-            setImageFile={setImageFile}
-            uploadedImageUrl={uploadedImageUrl}
-            setUploadedImageUrl={setUploadedImageUrl}
-            setImageLoadingState={setImageLoadingState}
-            imageLoadingState={imageLoadingState}
+            initialImageUrl={uploadedImageUrl}
+            onUploadComplete={handleImageUploadComplete}
             isEditMode={currentEditedId !== null}
             isCustomStyling={true}
           />

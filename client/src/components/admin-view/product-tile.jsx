@@ -12,11 +12,17 @@ function AdminProductTile({
     <Card className="w-full max-w-sm mx-auto">
       <div>
         <div className="relative">
-          <img
-            src={product?.image}
-            alt={product?.title}
-            className="w-full h-[300px] object-cover rounded-t-lg"
-          />
+          {product?.image ? (
+            <img
+              src={product.image}
+              alt={product.title}
+              className="w-full h-[300px] object-cover rounded-t-lg"
+            />
+          ) : (
+            <div className="w-full h-[300px] flex items-center justify-center bg-gray-200 rounded-t-lg">
+              <p className="text-gray-500">No Image Available</p>
+            </div>
+          )}
         </div>
         <CardContent>
           <h2 className="text-xl font-bold mb-2 mt-2">{product?.title}</h2>
@@ -40,10 +46,18 @@ function AdminProductTile({
               setCurrentEditedId(product?._id);
               setFormData(product);
             }}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            variant="secondary" // Styled with secondary variant
           >
             Edit
           </Button>
-          <Button onClick={() => handleDelete(product?._id)}>Delete</Button>
+          <Button
+            onClick={() => handleDelete(product?._id)}
+            variant="destructive" // Styled with destructive variant
+            className="bg-red-500 hover:bg-blue-700 text-white"
+          >
+            Delete
+          </Button>
         </CardFooter>
       </div>
     </Card>
